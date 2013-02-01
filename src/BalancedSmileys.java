@@ -1,7 +1,34 @@
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class BalancedSmileys {
 	private String s;
+	
+	private HashMap<MemoKey, Boolean> memo = new HashMap<MemoKey, Boolean>();
+	
+	public class MemoKey{
+		int i = 0;
+		long depth = 0;
+		boolean smiley = false;
+		
+		public MemoKey(int i, long depth, boolean smiley){
+			this.i = i;
+			this.depth = depth;
+			this.smiley = smiley;
+		}
+		
+		@Override
+		public int hashCode(){
+			return (500*500*this.i)+(500*(int)this.depth) + (smiley ? 1 : 0);
+		}
+		
+		@Override
+		public boolean equals(Object o){
+			MemoKey k = (MemoKey)o;
+			return k.hashCode() == this.hashCode();
+		}
+	}
+	
 	public BalancedSmileys(String s){
 		this.s = s;
 	}
@@ -11,48 +38,41 @@ public class BalancedSmileys {
 	}
 	
 	private boolean isBalanced(int i, long depth, boolean smiley){
-		if (i == s.length()){
-//			System.out.println("depth: "+depth);
-			return depth == 0;
-		}
-		if (depth > s.length()-i){
-//			System.out.println("PRUNE!");
-			return false;
-		}
-		if (s.charAt(i) == '('){
-			if (smiley){
-//				System.out.println("CONSUME SMILEY");
-				return isBalanced(i+1, depth, false);
-			}else{
-//				System.out.println("ADD DEPTH");
-				return isBalanced(i+1, depth+1, false);
-			}
-		}else if (s.charAt(i) == ')'){
-			if (smiley){
-				return isBalanced(i+1, depth, false);
-			}else if (depth == 0){
-				return false;
-			}else{
-				return isBalanced(i+1, depth-1, false);
-			}
-		}else if (s.charAt(i) == ':'){
-//			System.out.println("TRY SMILEY");
-			boolean balancedSmiley = isBalanced(i+1, depth, true);
-			if (balancedSmiley){
-//				System.out.println("BALANCED SMILEY");
-				return true;
-			}else{
-				boolean balanced = isBalanced(i+1, depth, false);
-				if (balanced){
-//					System.out.println("BALANCED BUT NOT SMILEY");
+
+		MemoKey key = new MemoKey(i, depth, smiley);
+		
+		if (memo.get(key) != null){
+			return memo.get(key);
+		}else{
+			boolean balanced = false;
+			
+			if (i == s.length()){
+				balanced = (depth == 0);
+			}else if (depth > s.length()-i){
+				balanced = false;
+			}else if (s.charAt(i) == '('){
+				if (smiley){
+					balanced = isBalanced(i+1, depth, false);
+				}else{
+					balanced = isBalanced(i+1, depth+1, false);
 				}
-				return balanced;
+			}else if (s.charAt(i) == ')'){
+				if (smiley){
+					balanced = isBalanced(i+1, depth, false);
+				}else if (depth == 0){
+					balanced = false;
+				}else{
+					balanced = isBalanced(i+1, depth-1, false);
+				}
+			}else if (s.charAt(i) == ':'){
+				balanced = isBalanced(i+1, depth, true) || isBalanced(i+1, depth, false);
+			}else{
+				balanced = isBalanced(i+1, depth, false);
 			}
-		}else if (smiley){
-//			System.out.println("PRUNE2");
-			return false;
-		} else {
-			return isBalanced(i+1, depth, false);
+			
+			memo.put(key, balanced);
+			
+			return balanced;
 		}
 	}
 	
@@ -68,10 +88,7 @@ public class BalancedSmileys {
 		
 		for (int i = 1; i <= t; i++){
 			String s = scin.nextLine();
-//			System.out.println(s);
 			BalancedSmileys bs = new BalancedSmileys(s);
-			//System.out.println(s);
-			//System.out.println(bs.fix());
 			if (bs.isBalanced()){
 				System.out.println("Case #"+i+": YES");
 			}else{
