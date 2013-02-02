@@ -4,80 +4,43 @@ import java.util.Scanner;
 public class BalancedSmileys {
 	private String s;
 	
-	private HashMap<MemoKey, Boolean> memo = new HashMap<MemoKey, Boolean>();
-	
-	public class MemoKey{
-		int i = 0;
-		long depth = 0;
-		boolean smiley = false;
-		
-		public MemoKey(int i, long depth, boolean smiley){
-			this.i = i;
-			this.depth = depth;
-			this.smiley = smiley;
-		}
-		
-		@Override
-		public int hashCode(){
-			return (500*500*this.i)+(500*(int)this.depth) + (smiley ? 1 : 0);
-		}
-		
-		@Override
-		public boolean equals(Object o){
-			MemoKey k = (MemoKey)o;
-			return k.hashCode() == this.hashCode();
-		}
-	}
-	
 	public BalancedSmileys(String s){
 		this.s = s;
 	}
 	
-	public boolean isOther(char c){
-		return c != '(' && c != ')';
-	}
-	
-	private boolean isBalanced(int i, long depth, boolean smiley){
-
-		MemoKey key = new MemoKey(i, depth, smiley);
-		
-		if (memo.get(key) != null){
-			return memo.get(key);
-		}else{
-			boolean balanced = false;
-			
-			if (i == s.length()){
-				balanced = (depth == 0);
-			}else if (depth > s.length()-i){
-				balanced = false;
-			}else if (s.charAt(i) == '('){
-				if (smiley){
-					balanced = isBalanced(i+1, depth, false);
-				}else{
-					balanced = isBalanced(i+1, depth+1, false);
-				}
-			}else if (s.charAt(i) == ')'){
-				if (smiley){
-					balanced = isBalanced(i+1, depth, false);
-				}else if (depth == 0){
-					balanced = false;
-				}else{
-					balanced = isBalanced(i+1, depth-1, false);
-				}
-			}else if (s.charAt(i) == ':'){
-				balanced = isBalanced(i+1, depth, true) || isBalanced(i+1, depth, false);
-			}else{
-				balanced = isBalanced(i+1, depth, false);
-			}
-			
-			memo.put(key, balanced);
-			
-			return balanced;
+	private boolean isSmiley(int i){
+		if (i == 0){
+			return false;
 		}
+		
+		return s.charAt(i-1) == ':';
 	}
 	
 	public boolean isBalanced(){
-		return isBalanced(0, 0, false);
+		int maxOpen = 0;
+		int minOpen = 0;
+		
+		for (int i = 0; i < s.length(); i++){
+			if (s.charAt(i) == '('){
+				maxOpen++;
+				if (!isSmiley(i)){
+					minOpen++;
+				}
+			}else if (s.charAt(i) == ')'){
+				minOpen--;
+				if (minOpen < 0){
+					minOpen++;
+				}
+				if (!isSmiley(i)){
+					maxOpen--;
+					if (maxOpen < 0){
+						return false;
+					}
+				}
+			}
+		}
+		
+		return maxOpen >= 0 && minOpen == 0;
 	}
 	
 	public static void main(String args[]){
